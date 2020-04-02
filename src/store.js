@@ -17,7 +17,7 @@ export class Store {
 
     connect() {
 
-        let userid = 1234//stash.get('userid');
+        let userid = 'asdfg1234'//stash.get('userid');
         if (!userid) {
             console.error("User not logged in!")
             return;
@@ -25,7 +25,7 @@ export class Store {
 
         if (this.socket) return this.socket;
 
-        const socket = this.socket = io(config.url + '/socket.io/user/' + userid);
+        const socket = this.socket = io(config.url + '/user/' + userid);
 
 
         this.registerListeners();
@@ -100,7 +100,7 @@ export class Store {
 
         } else {
             clientInfo = {
-                deviceName: store.get('deviceName'),
+                deviceName: false,//store.get('deviceName'),
                 os: {
                     platform: navigator.userAgent,
                     version: navigator.appName
@@ -109,7 +109,7 @@ export class Store {
         }
         if (!clientInfo.deviceName) {
             clientInfo.deviceName = "browser-" + (new Date()).getTime();
-            store.set('deviceName', clientInfo.deviceName)
+            //store.set('deviceName', clientInfo.deviceName)
         }
 
         clientInfo.role = 'client';
