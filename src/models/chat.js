@@ -5,7 +5,7 @@ export default class Chat {
     }
 
     static get tableKeys() {
-        return 'chat_id, group_name'
+        return 'id,chat_identifier'
     }
 
 }

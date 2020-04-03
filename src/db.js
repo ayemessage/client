@@ -2,28 +2,38 @@ import Dexie from 'dexie'
 
 const config = require("./config");
 
-const db = new Dexie(config.dbName);
+// const db = new Dexie();
 
 const models = [
-    require('./models/chat').default
+    require('./models/chat').default,
+    require('./models/handle').default,
+    require('./models/message').default,
+    require('./models/setting').default
 ]
 
 
-export class DB {
+export class DB extends Dexie {
     constructor() {
-        this.setup();
+        super(config.dbName);
+
+        this.setupSchemas();
     }
 
-    setup() {
+    setupSchemas() {
         let schema = {}
         models.forEach(model => {
             schema[model.tableName] = model.tableKeys;
-            this[model.tableName] = model;
+            //this[model.tableName] = model;
         })
 
         console.log(schema);
 
-        db.version(1).stores(schema);
+        this.version(1).stores(schema);
+
+        models.forEach(model => {
+            this[model.tableName].mapToClass(model);
+            model.db = this;
+        })
 
     }
 
