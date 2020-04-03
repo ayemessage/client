@@ -8,6 +8,19 @@ If you really want to make this happen, donations are always appreciated!
 
 You can also **subscribe** here to get emailed updates when things are ready: https://mailchi.mp/b2d68402704b/ayemessage
 
+## Status
+
+[X] Prove worker concept (ie the core concepts of application)
+[x] Decide on frameworks, etc
+[X] Boilerplate, get frameworks installed and working
+[X] Complete server data mover
+[X] Complete client data-flow
+[ ] Rebuild worker to send and receive for this app
+[ ] User authentication
+[ ] Encryption of messages
+[ ] P2P transmission
+[ ] Basic Chat UI
+[ ] Deal with attachments
 
 ## How The Data is Accessed
 
@@ -75,7 +88,7 @@ Ok, so more specific to the application, here is my plan:
 
 1. I will create a thin socket.io server that will ferry the requested messages back and forth.
 2. Next, will create an Electron app with two effective components:
-  1. A React UI "Client", that will interface said server and self-discover to nearby authenticated devices, store using either IndexedDB or minimongo (leaning towards the first) and from there, it's just another chat app
+  1. A React UI "Client", that will interface said server and self-discover to nearby authenticated devices, store using  dexie.js and from there, it's just another chat app
   2. The Worker will be bundleled into this app that will interface the messages, and will just be a very thin socket client.
   
   
