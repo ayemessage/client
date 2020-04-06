@@ -63,8 +63,7 @@ export class Dataflow {
 
         socket.on('sendMessage', this.onSendMessage.bind(this));
         socket.on('messageSent', this.onMessageSent.bind(this));
-        socket.on('receivedMessage', this.onReceivedMessage.bind(this));
-        socket.on('messageHistory', this.onMessageHistory.bind(this));
+        socket.on('receivedMessages', this.receivedMessages.bind(this));
         socket.on('messageHistoryRequest', this.onMessageHistoryRequest.bind(this));
 
     }
@@ -144,39 +143,17 @@ export class Dataflow {
     /**
      * This is when a new message appears inside of iMessage (whether sent by me, in ayeMessage, or received from another person)
      *
-     * @param message       {Message}   The message data, used to create the object
-     * @param chat          {Chat}      When applicable, the chat data used to create the new record
-     * @param backloading   {boolean}   Whether we are backloading data, or this is a new message, in which case we should notify
+     * @param messages      {[Message]} The new messages received
+     * @param chats         {[Chat]}    When applicable, the chat data used to create the new record
+     * @param handles       {[Chat]}  When applicable, any new handles
+     * @param alert         {boolean}   Whether to alert for new message
+     * @param expectMore    {boolean}   If this is a backload whether to expect more (probably delay re-painting)
      * @returns Promise<{[Chat|Message]}>
      */
-    async onReceivedMessage({message, chat}, backloading) {
+    async onReceivedMessages({messages, chats, handles, expectMore, alert}) {
         let promises = [];
-        if (chat) {
-            promises.push(db.chat.add(chat));
-        }
 
-        if (message) {
-            promises.push(db.message.add(message));
-        }
 
-        let result = await Promise.all(promises);
-
-        if (!backloading) {
-            // @TODO: Notify application and user
-        }
-
-        return result;
-    }
-
-    /**
-     * Received when message history data is received, normally at our request
-     *
-     * @param chats        {[Chat]}     An array of chats to backload
-     * @param messages     {[Message]}  An array of messages to backload
-     * @returns Promise<void>
-     */
-    async onMessageHistory({chats, messages}) {
-        let promises = [];
         if (chats && chats.length) {
             promises.push(db.chat.bulkAdd(chats));
         }
@@ -184,7 +161,16 @@ export class Dataflow {
             promises.push(db.message.bulkAdd(messages));
         }
         await Promise.all(promises);
+
+        let result = await Promise.all(promises);
+
+        if (alert) {
+            // @TODO: Notify application and user
+        }
+
+        return result;
     }
+
 
     /**
      * Sent when another device is requesting message logs.  We should listen for a specific flag, because other
@@ -194,10 +180,10 @@ export class Dataflow {
      * @param lastDate      {integer}  Timestamp of last message received
      */
     async onMessageHistoryRequest({allowPeers, lastDate}) {
-        let history = await this.worker.getMessageHistory({lastDate})
-
-        this.socket.emit('messageHistory', history);
-        this.onMessageHistory(history);
+        let history = await this.worker.getMessageHistory({lastDate}, data => {
+            this.socket.emit('receivedMessages', history);
+            this.onMessageHistory(history);
+        })
     }
 
 

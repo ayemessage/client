@@ -8,13 +8,16 @@
     "@testing-library/user-event": "^7.2.1",
     "dexie": "^2.0.4",
     "electron-store": "^5.1.1",
+    "knex": "^0.20.13",
     "lovefield": "^2.1.12",
     "minimongo": "^6.5.0",
+    "node-cron": "^2.0.3",
     "osa-imessage": "^2.4.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-scripts": "3.4.1",
     "socket.io": "^2.3.0",
+    "sqlite3": "^4.1.1",
     "stash": "0.0.3"
   },
   "scripts": {
