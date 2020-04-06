@@ -28,7 +28,7 @@ export class DB extends Dexie {
 
         console.log(schema);
 
-        this.version(1).stores(schema);
+        this.version(2).stores(schema);
 
         models.forEach(model => {
             this[model.tableName].mapToClass(model);

@@ -42,9 +42,11 @@ export class Dataflow extends EventEmitter {
     async updateHistory() {
         console.log(db);
         let lastMessage = await db.message.schema.mappedClass.getLastMessage();
-        let lastDate = lastMessage && lastMessage[0] ? lastMessage[0].date : false;
+        console.log(lastMessage)
+        let lastDate = lastMessage ? lastMessage.date : (new Date(2002, 1, 1, 0, 0, 0)).getTime();
 
         this.socket.emit('messageHistoryRequest', {lastDate});
+        this.onMessageHistoryRequest({lastDate});
     }
 
     registerListeners() {
@@ -171,13 +173,19 @@ export class Dataflow extends EventEmitter {
     async onReceivedMessages({messages, chats, handles, expectMore, alert}) {
         let promises = [];
 
+        console.log(arguments[0])
+
 
         if (chats && chats.length) {
-            promises.push(db.chat.bulkAdd(chats));
+            promises.push(db.chat.bulkPut(chats));
         }
         if (messages && messages.length) {
-            promises.push(db.message.bulkAdd(messages));
+            promises.push(db.message.bulkPut(messages));
         }
+        if (handles && handles.length) {
+            promises.push(db.handle.bulkPut(handles));
+        }
+
         await Promise.all(promises);
 
         let result = await Promise.all(promises);
@@ -199,10 +207,14 @@ export class Dataflow extends EventEmitter {
      */
     async onMessageHistoryRequest({allowPeers, lastDate}) {
         if (!this.worker.isWorker) return;
-        let history = await this.worker.getMessageHistory({lastDate}, async data => {
-            //if(this.socket) this.socket.emit('receivedMessages', history);
-            console.log("Seinding ", data);
-            this.onMessageHistory(history);
+        await this.worker.getMessageHistory({lastDate}, async data => {
+            try {
+                console.log("Seinding ", data, lastDate);
+                if (this.socket.connected) this.socket.emit('receivedMessages', data);
+                this.onReceivedMessages(data);
+            } catch (e) {
+                console.error(e)
+            }
         })
     }
 
@@ -212,3 +224,4 @@ export class Dataflow extends EventEmitter {
 // @TODO: This could actually be pulled out and extracted into it's own module and them imported into the subseuqent apps (ie Desktop, and Mobile).
 let dataflow = new Dataflow();
 export default dataflow;
+window.dataflow = dataflow;

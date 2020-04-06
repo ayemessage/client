@@ -23,7 +23,7 @@ export default class Message {
     }
 
     static get tableKeys() {
-        return 'id,chat_id,handle_id,tracking_id'
+        return 'id,chat_id,handle_id,tracking_id,date'
     }
 
     /**
@@ -31,6 +31,6 @@ export default class Message {
      * @returns {Message|null}
      */
     static getLastMessage() {
-        return this.db.message.orderBy('date', 'DESC').limit(1);
+        return this.db.message.orderBy('date', 'DESC').limit(1).first();
     }
 }

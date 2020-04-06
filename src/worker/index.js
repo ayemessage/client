@@ -59,7 +59,7 @@ export default class Worker {
 
             // If we have new messages push them out
             // @TODO will need to abstract this out so we can notify locally, globally, and mesh
-            let data = this.getSupportingMessageData(messages, {alert: true});
+            let data = await this.getSupportingMessageData(messages, {alert: true});
             this.dataflow.socket.emit('receivedMessages', data);
             this.dataflow.onReceivedMessages(data);
         } catch (e) {
@@ -96,7 +96,9 @@ export default class Worker {
         while (messages.length > 0) {
 
             // Get new messages
-            let messages = await this.messagesDb.getMessagesSince(lastDate)
+            console.log(lastDate)
+            messages = await this.messagesDb.getMessagesSince(lastDate)
+            console.log(messages);
             if (messages.length) {
                 // Push up the next date
                 messages.forEach(m => m['_cocoa_date'] > lastDate ? lastDate = m['_cocoa_date'] : false);
@@ -115,7 +117,7 @@ export default class Worker {
      * @param additionalInfo    {{*}=}          Any other info you might want to include in the object
      * @returns {{handles: [Handle], chats: [Chat], messages: [Message]}}
      */
-    getSupportingMessageData(messages, additionalInfo) {
+    async getSupportingMessageData(messages, additionalInfo) {
 
         if (!additionalInfo) additionalInfo = {};
 
@@ -126,8 +128,8 @@ export default class Worker {
         return {
             ...additionalInfo,
             messages,
-            chats: this.messagesDb.getChats(chat_ids),
-            handles: this.messagesDb.getHandles({chat_ids, handle_ids})
+            chats: await this.messagesDb.getChats(chat_ids),
+            handles: await this.messagesDb.getHandles({chat_ids, handle_ids})
         }
 
     }

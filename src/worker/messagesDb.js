@@ -74,9 +74,14 @@ export default class MessagesDB {
         return new Date((time / Math.pow(10, 6)) + appleEpochBase);
     }
 
-    convertToAppleTime(time, attrs) {
+    /**
+     * Convert a JavaScript timestamp to Cocoa
+     * @param time      {int}
+     * @returns         {Date}
+     */
+    convertToAppleTime(time) {
         if (!time) return time;
-        return new Date((time - appleEpochBase) * Math.pow(10, 6));
+        return new Date((time * Math.pow(10, 6)) + appleEpochBase);
     }
 
     /**
@@ -95,19 +100,21 @@ export default class MessagesDB {
         if (date instanceof Date) date = date.getTime();
 
         // Check if its a unix timestamp or Cocoa
-        if (date < Math.pow(10, 13)) return this.convertToAppleTime(date);
+        if (date < Math.pow(10, 12)) return this.convertToAppleTime(date).getTime();
 
         return date;
     }
 
     getMessagesSince(date) {
+        console.log(date);
         date = this.getSuppliedDateStamp(date);
+        console.log(date);
         return this.connection
             .from('message')
             .leftJoin('handle', 'message.handle_id', '=', 'handle.ROWID')
             .leftJoin('chat_message_join', 'message.ROWID', '=', 'chat_message_join.message_id')
-            .select(['message.ROWID', 'message.guid', 'text', 'handle_id', 'message.service', 'account', 'date', 'date_delivered', 'date_read', 'is_delivered', 'is_finished', 'is_from_me', 'is_read', 'is_sent', 'payload_data', 'chat_message_join.chat_id'])
-            .select({sender: 'handle.id'})
+            .select(['message.guid', 'text', 'handle_id', 'message.service', 'account', 'date', 'date_delivered', 'date_read', 'is_delivered', 'is_finished', 'is_from_me', 'is_read', 'is_sent', 'chat_message_join.chat_id'])
+            .select({id: 'message.ROWID', sender: 'handle.id'})
             .where('message.date', '>', date)
             .orWhere('message.date_read', '>', date)
             .orWhere('message.date_delivered', '>', date)
@@ -132,7 +139,8 @@ export default class MessagesDB {
         return this.connection
             .from('chat')
             //.leftJoin('chat_handle_join', 'chat_handle_join.chat_id', '=', 'chat.ROWID')
-            .select(['chat.ROWID', 'chat.guid', 'chat_identifier', 'service_name', 'room_name', 'is_archived', 'last_addressed_handle', 'display_name', 'group_id'])
+            .select(['chat.guid', 'chat_identifier', 'service_name', 'room_name', 'is_archived', 'last_addressed_handle', 'display_name', 'group_id'])
+            .select({id: 'chat.ROWID'})
             .whereIn('ROWID', chat_ids)
     }
 
