@@ -7,6 +7,7 @@
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
     "dexie": "^2.0.4",
+    "electron-builder": "^22.4.1",
     "electron-store": "^5.1.1",
     "knex": "^0.20.13",
     "lovefield": "^2.1.12",
@@ -20,12 +21,14 @@
     "sqlite3": "^4.1.1",
     "stash": "0.0.3"
   },
+  "main": "electron-dev.js",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "electron": "electron ."
+    "electron": "electron .",
+    "postinstall": "install-app-deps"
   },
   "eslintConfig": {
     "extends": "react-app"

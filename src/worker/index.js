@@ -1,5 +1,4 @@
 import {schedule} from 'node-cron';
-import * as MessagesApi from 'osa-imessage'
 import {checkFrequency} from '../config';
 import MessagesDb from './messagesDb'
 
@@ -10,7 +9,7 @@ import MessagesDb from './messagesDb'
  * @param dataflow  {Dataflow}
  * @param
  */
-class Index {
+export default class Worker {
 
     /**
      *
@@ -19,8 +18,12 @@ class Index {
      * @returns        {boolean}
      */
     constructor({dataflow, db}) {
-        Object.assign(this, arguments[0])
-        if (!this.checkIfWorker()) return this.isWorker = false;
+        Object.assign(this, arguments[0]);
+
+        this.isWorker = this.checkIfWorker();
+        if (!this.isWorker) return console.log("This is NOT a registered worker");
+        console.log("Registering application as a worker!")
+        this.messagesApi = window.require('osa-imessage');
         this.messagesDb = new MessagesDb(this);
 
         this.scheduleWatchMessages();
@@ -48,15 +51,20 @@ class Index {
      */
     async checkNewMessages() {
 
-        let messages = await this.messagesDb.getMessagesSince()
+        try {
+            await this.messagesDb.connect();
+            let messages = await this.messagesDb.getMessagesSince()
 
-        if (!messages.length) return false;
+            if (!messages.length) return false;
 
-        // If we have new messages push them out
-        // @TODO will need to abstract this out so we can notify locally, globally, and mesh
-        let data = this.getSupportingMessageData(messages, {alert: true});
-        this.dataflow.socket.emit('receivedMessages', data);
-        this.dataflow.onReceivedMessages(data);
+            // If we have new messages push them out
+            // @TODO will need to abstract this out so we can notify locally, globally, and mesh
+            let data = this.getSupportingMessageData(messages, {alert: true});
+            this.dataflow.socket.emit('receivedMessages', data);
+            this.dataflow.onReceivedMessages(data);
+        } catch (e) {
+            console.error(e);
+        }
 
     }
 
@@ -70,7 +78,7 @@ class Index {
      */
     sendMessage({chat_identifier, text, attachments, tracking_id}) {
         // @TODO: Support attachments
-        return MessagesApi.send(chat_identifier, text)
+        return this.messagesApi.send(chat_identifier, text)
     }
 
     /**
@@ -83,6 +91,7 @@ class Index {
      */
     async getMessageHistory({lastDate}, emitter) {
 
+        await this.messagesDb.connect();
         let messages = [true];
         while (messages.length > 0) {
 

@@ -1,14 +1,16 @@
 import db from './db'
+import Worker from './worker'
+import * as config from './config'
+import * as io from 'socket.io-client'
+import {v4 as uuidv4} from 'uuid';
+import {EventEmitter} from "events";
 
-const io = require('socket.io-client')
-const config = require("./config");
-//const stash = require('stash')('/')
-const worker = require('./worker')
-
-// Holdover until real userid can be set
-
-export class Dataflow {
+/**
+ * This is the class that is in charge of ensuring our data is valid throughout the application
+ */
+export class Dataflow extends EventEmitter {
     constructor() {
+        super();
         this.worker = new Worker({dataflow: this, db});
         this.initStorage();
         this.connect();
@@ -20,6 +22,7 @@ export class Dataflow {
 
     connect() {
 
+        // @TODO: Need to get actual userids and authentication going
         let userid = 'asdfg1234' //stash.get('userid');
         if (!userid) {
             console.error("User not logged in!")
@@ -33,7 +36,7 @@ export class Dataflow {
 
         this.registerListeners();
 
-        socket.open()
+        this.socket.open()
     }
 
     async updateHistory() {
@@ -63,7 +66,7 @@ export class Dataflow {
 
         socket.on('sendMessage', this.onSendMessage.bind(this));
         socket.on('messageSent', this.onMessageSent.bind(this));
-        socket.on('receivedMessages', this.receivedMessages.bind(this));
+        socket.on('receivedMessages', this.onReceivedMessages.bind(this));
         socket.on('messageHistoryRequest', this.onMessageHistoryRequest.bind(this));
 
     }
@@ -83,8 +86,7 @@ export class Dataflow {
                 deviceName: os.hostname(),
                 os: {
                     arch: os.arch(),
-                    platform: os.platform(),
-                    version: os.version()
+                    platform: os.platform()
                 },
 
             }
@@ -103,11 +105,26 @@ export class Dataflow {
             //store.set('deviceName', clientInfo.deviceName)
         }
 
-        clientInfo.role = 'client';
+        clientInfo.role = ['client'];
+
+        if (this.worker.isWorker) clientInfo.role.push('worker');
 
         return clientInfo;
     }
 
+
+    /**
+     * This is what you will hit to actually send a message
+     *
+     * @param chat_identifier {string}  The unique identifier for this chat session
+     * @param text            {string}  The body of the message to be sent
+     * @param attachments     {[{}]}    Any attachments to include (currently unsupported)
+     */
+    async sendMessage({chat_identifier, text, attachments}) {
+        let data = arguments[0];
+        data.tracking_id = uuidv4();
+        this.socket.emit('sendMessage', data)
+    }
 
     /**
      * This is when a message is sent from another ayeMesage device, to be sent by Messages
@@ -118,6 +135,7 @@ export class Dataflow {
      * @param tracking_id     {string}  A unique ID assigned to this message, for tracking within ayeMessage until finally sent and given it's final ID/GUID
      */
     async onSendMessage({chat_identifier, text, attachments, tracking_id}) {
+        if (!this.worker.isWorker) return;
         let result = false;
         try {
             result = await this.worker.sendMessage(arguments[0]);
@@ -180,8 +198,10 @@ export class Dataflow {
      * @param lastDate      {integer}  Timestamp of last message received
      */
     async onMessageHistoryRequest({allowPeers, lastDate}) {
-        let history = await this.worker.getMessageHistory({lastDate}, data => {
-            this.socket.emit('receivedMessages', history);
+        if (!this.worker.isWorker) return;
+        let history = await this.worker.getMessageHistory({lastDate}, async data => {
+            //if(this.socket) this.socket.emit('receivedMessages', history);
+            console.log("Seinding ", data);
             this.onMessageHistory(history);
         })
     }
@@ -189,5 +209,6 @@ export class Dataflow {
 
 }
 
+// @TODO: This could actually be pulled out and extracted into it's own module and them imported into the subseuqent apps (ie Desktop, and Mobile).
 let dataflow = new Dataflow();
 export default dataflow;

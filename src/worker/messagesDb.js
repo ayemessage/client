@@ -1,5 +1,8 @@
-import knex from 'knex'
+// Removing this here as we want to use the electron compiled knex/sqllite
+//import knex from 'knex'
 import {historyChunkSize, messagesDbConnection} from '../config'
+
+console.log(messagesDbConnection);
 
 const appleEpochBase = 978307200000;
 
@@ -25,15 +28,31 @@ export default class MessagesDB {
     async connect() {
         if (this.connection) return this.connection;
 
-        return new Promise((resolve, reject) => {
-            this.knex = knex({
-                client: 'sqlite3',
-                connection: messagesDbConnection,
-                afterCreate: (conn, done) => {
-                    resolve(this.connection = conn);
-                }
-            });
-        })
+        this.knex = this.connection = await window.require("knex")({
+            client: 'sqlite3',
+            connection: messagesDbConnection,
+            useNullAsDefault: true,
+        });
+        await this._primeLastMessage();
+    }
+
+    /**
+     * Fetch the very last message in the DB so that we have a point of reference as to when to fetch new messages from
+     * @private
+     */
+    async _primeLastMessage() {
+        try {
+            console.log("Getting latest message");
+            let lastMessage = await this.connection
+                .from('message')
+                .orderBy('date', 'DESC')
+                .limit(1)
+
+            console.log("FETCHING MESSAGE", lastMessage);
+            this.lastRetreivedMessage = lastMessage[0].date;
+        } catch (e) {
+            console.error(e)
+        }
     }
 
     /**
@@ -45,7 +64,11 @@ export default class MessagesDB {
     convertFromAppleTime(time, attrs) {
         if (!time) return time;
         // If we are sent an object with props convert the props
-        if (attrs) return time.map((value, index) => attrs.includes(index) ? this.convertFromAppleTime(time['_cocoa_' + index] = value) : value);
+        if (attrs) {
+            for (var i in time) {
+                if (attrs.includes(i)) time[i] = this.convertFromAppleTime(time['_cocoa_' + i] = time[i])
+            }
+        }
 
         if (time > this.lastRetreivedMessage) this.lastRetreivedMessage = time;
         return new Date((time / Math.pow(10, 6)) + appleEpochBase);
@@ -80,7 +103,6 @@ export default class MessagesDB {
     getMessagesSince(date) {
         date = this.getSuppliedDateStamp(date);
         return this.connection
-            .query()
             .from('message')
             .leftJoin('handle', 'message.handle_id', '=', 'handle.ROWID')
             .leftJoin('chat_message_join', 'message.ROWID', '=', 'chat_message_join.message_id')
@@ -91,7 +113,6 @@ export default class MessagesDB {
             .orWhere('message.date_delivered', '>', date)
             .orderBy('date', 'ASC')
             .limit(historyChunkSize)
-            .fetch()
             .then(this.postProcessMessages.bind(this));
     }
 
@@ -103,21 +124,20 @@ export default class MessagesDB {
         messages.forEach(message => {
             this.convertFromAppleTime(message, ['date', 'date_delivered', 'date_read'])
         })
+
+        return messages;
     }
 
     getChats(chat_ids) {
         return this.connection
-            .query()
             .from('chat')
             //.leftJoin('chat_handle_join', 'chat_handle_join.chat_id', '=', 'chat.ROWID')
             .select(['chat.ROWID', 'chat.guid', 'chat_identifier', 'service_name', 'room_name', 'is_archived', 'last_addressed_handle', 'display_name', 'group_id'])
             .whereIn('ROWID', chat_ids)
-            .fetch();
     }
 
     getHandles({chat_ids, handle_ids}) {
         return this.connection
-            .query()
             .from('handle')
             //.leftJoin('chat_handle_join', 'chat_handle_join.chat_id', '=', 'chat.ROWID')
             .select({
@@ -129,7 +149,6 @@ export default class MessagesDB {
             .orWhereIn('ROWID', function () {
                 this.select('handle_id').from('chat_handle_join').whereIn('chat_id', chat_ids)
             })
-            .fetch();
 
     }
 
