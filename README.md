@@ -17,13 +17,13 @@ You can also **subscribe** here to get emailed updates when things are ready: ht
  - [X] Boilerplate, get frameworks installed and working
  - [X] Complete server data mover
  - [X] Complete client data-flow
- - [ ] Rebuild worker to send and receive for this app
+ - [X] Rebuild worker to send and receive for this app
  - [ ] User authentication
  - [ ] Encryption of messages
  - [ ] P2P transmission
  - [ ] Basic Chat UI
  - [ ] Deal with attachments
- - [ ] Get Electron app configured and running
+ - [X] Get Electron app configured and running
  - [ ] Launch publically available comm server for beta
 
 ## How The Data is Accessed
