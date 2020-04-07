@@ -1,3 +1,5 @@
+import Model from "./model";
+
 /**
  * @param id
  * @param message.guid
@@ -15,7 +17,7 @@
  * @param payload_data
  */
 
-export default class Message {
+export default class Message extends Model {
 
 
     static get tableName() {
@@ -31,6 +33,6 @@ export default class Message {
      * @returns {Message|null}
      */
     static getLastMessage() {
-        return this.db.message.orderBy('date', 'DESC').limit(1).first();
+        return this.db.message.orderBy('date').last();
     }
 }

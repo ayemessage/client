@@ -105,20 +105,20 @@ export default class MessagesDB {
         return date;
     }
 
-    getMessagesSince(date) {
-        console.log(date);
+    getMessagesSince(date, strict) {
         date = this.getSuppliedDateStamp(date);
-        console.log(date);
-        return this.connection
+        let query = this.connection
             .from('message')
             .leftJoin('handle', 'message.handle_id', '=', 'handle.ROWID')
             .leftJoin('chat_message_join', 'message.ROWID', '=', 'chat_message_join.message_id')
             .select(['message.guid', 'text', 'handle_id', 'message.service', 'account', 'date', 'date_delivered', 'date_read', 'is_delivered', 'is_finished', 'is_from_me', 'is_read', 'is_sent', 'chat_message_join.chat_id'])
             .select({id: 'message.ROWID', sender: 'handle.id'})
             .where('message.date', '>', date)
-            .orWhere('message.date_read', '>', date)
+
+        if (!strict) query = query.orWhere('message.date_read', '>', date)
             .orWhere('message.date_delivered', '>', date)
-            .orderBy('date', 'ASC')
+
+        return query.orderBy('date', 'ASC')
             .limit(historyChunkSize)
             .then(this.postProcessMessages.bind(this));
     }

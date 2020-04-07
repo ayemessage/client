@@ -78,6 +78,7 @@ export default class Worker {
      */
     sendMessage({chat_identifier, text, attachments, tracking_id}) {
         // @TODO: Support attachments
+        // @TODO: Replace this entirely with osa2 instead of workign through the osa-imesage module
         return this.messagesApi.send(chat_identifier, text)
     }
 
@@ -97,7 +98,7 @@ export default class Worker {
 
             // Get new messages
             console.log(lastDate)
-            messages = await this.messagesDb.getMessagesSince(lastDate)
+            messages = await this.messagesDb.getMessagesSince(lastDate, true)
             console.log(messages);
             if (messages.length) {
                 // Push up the next date

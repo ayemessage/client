@@ -1,4 +1,6 @@
-export default class Setting {
+import Model from "./model";
+
+export default class Setting extends Model {
 
 
     static get tableName() {

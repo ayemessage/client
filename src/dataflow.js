@@ -43,10 +43,11 @@ export class Dataflow extends EventEmitter {
         console.log(db);
         let lastMessage = await db.message.schema.mappedClass.getLastMessage();
         console.log(lastMessage)
-        let lastDate = lastMessage ? lastMessage.date : (new Date(2002, 1, 1, 0, 0, 0)).getTime();
+        let lastDate = lastMessage ? lastMessage._cocoa_date : (new Date(2002, 1, 1, 0, 0, 0)).getTime();
 
-        this.socket.emit('messageHistoryRequest', {lastDate});
-        this.onMessageHistoryRequest({lastDate});
+        let requestData = {lastDate, deviceName: this.getClientInfo().deviceName, requestId: uuidv4()};
+        this.socket.emit('messageHistoryRequest', requestData);
+        this.onMessageHistoryRequest(requestData);
     }
 
     registerListeners() {
@@ -78,6 +79,7 @@ export class Dataflow extends EventEmitter {
      */
     getClientInfo() {
 
+        if (this.clientInfo) return this.clientInfo;
         // Discover who we are
         let clientInfo = {};
 
@@ -111,7 +113,7 @@ export class Dataflow extends EventEmitter {
 
         if (this.worker.isWorker) clientInfo.role.push('worker');
 
-        return clientInfo;
+        return this.clientInfo = clientInfo;
     }
 
 
@@ -176,11 +178,18 @@ export class Dataflow extends EventEmitter {
         console.log(arguments[0])
 
 
-        if (chats && chats.length) {
-            promises.push(db.chat.bulkPut(chats));
-        }
         if (messages && messages.length) {
             promises.push(db.message.bulkPut(messages));
+        }
+        if (chats && chats.length) {
+
+            let messageBubble = messages.reverse();
+            // Update last message
+            chats.forEach(chat => {
+                let lastMessage = messageBubble.find(m => m.chat_id == chat.id)
+                if (!chat.last_message || lastMessage._cocoa_date > chat.lastMessage._cocoa_date) chat.last_message = lastMessage;
+            })
+            promises.push(db.chat.bulkPut(chats));
         }
         if (handles && handles.length) {
             promises.push(db.handle.bulkPut(handles));
@@ -204,12 +213,18 @@ export class Dataflow extends EventEmitter {
      *
      * @param allowPeers    {boolean}  Whether to allow peer provided data history, typically when worker is offline
      * @param lastDate      {integer}  Timestamp of last message received
+     * @param deviceName    {string}   Device requesting the history
+     * @param requestId     {uuidv4}   UUID of the request being made
      */
-    async onMessageHistoryRequest({allowPeers, lastDate}) {
+    async onMessageHistoryRequest({allowPeers, lastDate, deviceName, requestId}) {
         if (!this.worker.isWorker) return;
         await this.worker.getMessageHistory({lastDate}, async data => {
             try {
-                console.log("Seinding ", data, lastDate);
+                Object.assign(data, {
+                    deviceName,
+                    requestId
+                })
+                console.log("Sending ", data, lastDate);
                 if (this.socket.connected) this.socket.emit('receivedMessages', data);
                 this.onReceivedMessages(data);
             } catch (e) {
