@@ -136,11 +136,18 @@ export default class MessagesDB {
     }
 
     getChats(chat_ids) {
+        let self = this;
         return this.connection
             .from('chat')
             //.leftJoin('chat_handle_join', 'chat_handle_join.chat_id', '=', 'chat.ROWID')
             .select(['chat.guid', 'chat_identifier', 'service_name', 'room_name', 'is_archived', 'last_addressed_handle', 'display_name', 'group_id'])
-            .select({id: 'chat.ROWID'})
+            .select({id: 'chat.ROWID', handle_ids: function(){
+                return this
+                    .from('chat_handle_join')
+                    .select(self.knex.raw("GROUP_CONCAT(`handle_id`)"))
+                    .whereRaw('chat_id=chat.ROWID')
+                    .groupBy('chat_id')
+            }})
             .whereIn('ROWID', chat_ids)
     }
 

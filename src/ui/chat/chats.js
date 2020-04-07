@@ -2,6 +2,7 @@ import React from 'react';
 import chat from '../../models/chat';
 import {Col, Container, ListGroup, Row} from "react-bootstrap";
 import Messages from "./messages";
+import dataflow from "../../dataflow";
 
 
 export default class Chats extends React.Component {
@@ -15,6 +16,8 @@ export default class Chats extends React.Component {
         }
 
         this.updateChats();
+
+        dataflow.on('chatsUpdated', this.updateChats.bind(this));
     }
 
     async updateChats() {
@@ -41,7 +44,7 @@ export default class Chats extends React.Component {
                     <Col sm={4} md={3} lg="2" className={"chat-sidebar"}>
                         <ListGroup variant="flush">
                             {this.state.chats.map(chat => (
-                                <ListGroup.Item className={"chat-sidebar-item"} onClick={() => this.selectChat(chat)}>
+                                <ListGroup.Item className={"chat-sidebar-item"} key={chat.guid} onClick={() => this.selectChat(chat)}>
                                     <b>{chat.getChatName()}</b>
                                     <p className={"chat-last-message"}>{chat.last_message ? chat.last_message.text : ""}</p>
                                 </ListGroup.Item>
@@ -50,7 +53,7 @@ export default class Chats extends React.Component {
                     </Col>
                     <Col sm="8" md={"9"} lg={"10"} className={"chat-messages-pane"}>
                         {this.state.activeChat ? (
-                            <Messages chatId={this.state.activeChat.id}/>
+                            <Messages chat={this.state.activeChat}/>
                         ) : (
                             <div>No Active Chat Selected</div>
                         )}

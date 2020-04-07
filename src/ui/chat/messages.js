@@ -18,7 +18,7 @@ export default class Messages extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-        if (prevProps.chatId == this.props.chatId) return;
+        if (prevProps.chat.id == this.props.chat.id) return;
         this.state.messages = [];
         this.updateMessages();
     }
@@ -26,7 +26,7 @@ export default class Messages extends React.Component {
     async updateMessages() {
         console.log(this.props);
         let messages = this.state.messages;
-        await message.query().where({'chat_id': this.props.chatId}).reverse().limit(100).each(message => {
+        await message.query().where({'chat_id': this.props.chat.id}).reverse().limit(100).each(message => {
             if (this.state.messages.find(m => m.guid == message.guid)) return;
             let messageObject = new Message({
                 id: message.is_from_me ? 0 : message.handle_id,
@@ -48,7 +48,7 @@ export default class Messages extends React.Component {
         return (
             <ChatFeed
                 messages={this.state.messages} // Boolean: list of message objects
-                showSenderName={true}
+                showSenderName={!!this.props.chat.group_id}
             />
         )
     }

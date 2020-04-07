@@ -188,7 +188,10 @@ export class Dataflow extends EventEmitter {
             chats.forEach(chat => {
                 let lastMessage = messageBubble.find(m => m.chat_id == chat.id)
                 if (!chat.last_message || lastMessage._cocoa_date > chat.lastMessage._cocoa_date) chat.last_message = lastMessage;
+                if(chat.handle_ids) chat.handle_ids = chat.handle_ids.split(",").map(parseInt);
+
             })
+
             promises.push(db.chat.bulkPut(chats));
         }
         if (handles && handles.length) {
@@ -201,6 +204,12 @@ export class Dataflow extends EventEmitter {
 
         if (alert) {
             // @TODO: Notify application and user
+        }
+
+        if(!expectMore){
+            if(chats) this.emit('chatsUpdated');
+            if(messages) this.emit('messagesUpdated');
+            this.emit('receivedUpdate');
         }
 
         return result;
