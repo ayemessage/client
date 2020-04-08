@@ -24,6 +24,7 @@ export default class SocketIOTransport extends EventEmitter {
   connect({userId}) {
 
 
+    return this;
     this.socket = io(this.dataflow.config.url + '/user/' + userId);
 
     this.socket.on('helloClient', (serverData) => {
@@ -45,6 +46,7 @@ export default class SocketIOTransport extends EventEmitter {
    * @param args
    */
   transmit(event, args) {
+    if(!this.socket) return;
     // @TODO: Encrypt packet data
     console.log('sending', event, args);
     let payload = this.encryption.encrypt({event, args});

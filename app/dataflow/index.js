@@ -39,7 +39,13 @@ export class DataFlow extends EventEmitter {
 
     // Here we loop over all our transports, instantiate them, start connection and wait for them to complete
     this.transports = await Promise.all(
-      [SocketIOTransport, LocalDiscoveryTransport].map(t => (new t({dataflow: this})).connect({userId}))
+      [SocketIOTransport, LocalDiscoveryTransport].map(t =>{
+        try{
+          return (new t({dataflow: this})).connect({userId})
+        }catch(e){
+          console.error(e);
+        }
+      })
     )
 
 
@@ -171,7 +177,7 @@ export class DataFlow extends EventEmitter {
       console.error(e);
     }
     this.emit('messageSent', {tracking_id, result});
-    this.onMessageSent({tracking_id, result});
+    //this.onMessageSent({tracking_id, result});
   }
 
   /**
@@ -251,15 +257,15 @@ export class DataFlow extends EventEmitter {
    */
   async onMessageHistoryRequest({allowPeers, lastDate, deviceName, requestId}) {
     if (!this.worker.isWorker) return;
+    let self = this;
     await this.worker.getMessageHistory({lastDate}, async data => {
       try {
         Object.assign(data, {
           deviceName,
           requestId
         });
-        console.log("Sending ", data, lastDate);
-        this.emit('receivedMessages', data);
-        this.onReceivedMessages(data);
+        console.log("Sending ", data, deviceName, lastDate);
+        self.emit('receivedMessages', data);
       } catch (e) {
         console.error(e)
       }

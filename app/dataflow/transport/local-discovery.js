@@ -1,6 +1,6 @@
 import {EventEmitter} from "events"
 import Encryption from "../encryption";
-import Discover from 'node-discover'
+import {Publisher, Subscriber} from 'cote'
 
 export default class LocalDiscoveryTransport extends EventEmitter {
 
@@ -23,25 +23,31 @@ export default class LocalDiscoveryTransport extends EventEmitter {
   connect({userId}) {
 
 
-    this.discover = new Discover({
-      key: this.encryption.hash(userId)
-    })
-
     // @TODO: Convert to encrypted channel ID
     this.channel = userId;
 
-    this.discover.join(this.channel, data => {
+
+    this.publisher = new Publisher({
+      name: userId,
+      // namespace: 'rnd',
+      // key: 'a certain key',
+      broadcasts: [this.channel],
+    });
+
+
+    this.subscriber = new Subscriber({
+      name: userId,
+      // namespace: 'rnd',
+      // key: 'a certain key',
+      subscribesTo: [this.channel],
+    });
+
+    this.subscriber.on(this.channel, (data) => {
       this.receive(data);
-    })
-
-
-    this.discover.on("added", function (obj) {
-      this.dataflow._emit('transportConnected', {transport: this})
     });
 
-    this.discover.on("removed", function (obj) {
-      console.log("A node has been removed.");
-    });
+    console.log("Discovery Started");
+
     return this;
   }
 
@@ -52,9 +58,10 @@ export default class LocalDiscoveryTransport extends EventEmitter {
    */
   transmit(event, args) {
     // @TODO: Encrypt packet data
-    console.log('sending [local]', event, args);
-    let payload = this.encryption.encrypt({event, args});
-    this.discover.send(this.channel, payload)
+    //let payload = this.encryption.encrypt({event, args});
+    let payload = {event, args};
+    console.log('sending [local]', payload);
+    this.publisher.publish(this.channel, payload)
   }
 
   /**
@@ -63,9 +70,10 @@ export default class LocalDiscoveryTransport extends EventEmitter {
    */
   receive(payload) {
     // @TODO: Decrypt packet data
-    let data = this.encryption.decrypt(payload);
+    //let data = this.encryption.decrypt(payload);
+    let data = payload;
     console.log('recieved [local]', data);
-    this.dataflow._emit(...data)
+    this.dataflow._emit(data.event, ...data.args)
   }
 
   /**
