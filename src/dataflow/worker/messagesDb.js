@@ -1,6 +1,6 @@
 // Removing this here as we want to use the electron compiled knex/sqllite
 //import knex from 'knex'
-import {historyChunkSize, messagesDbConnection} from '../config'
+import {historyChunkSize, messagesDbConnection} from '../../config'
 
 console.log(messagesDbConnection);
 

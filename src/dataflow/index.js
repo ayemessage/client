@@ -1,43 +1,72 @@
-import db from './db'
+import db from '../db'
 import Worker from './worker'
-import * as config from './config'
-import * as io from 'socket.io-client'
+import * as config from '../config'
 import {v4 as uuidv4} from 'uuid';
 import {EventEmitter} from "events";
+import SocketIOTransport from "./transport/socket-io";
 
 /**
  * This is the class that is in charge of ensuring our data is valid throughout the application
  */
-export class Dataflow extends EventEmitter {
-    constructor() {
+export class DataFlow extends EventEmitter {
+    constructor(userConfig) {
         super();
+
+        this.config = Object.assign({}, config, userConfig || {})
         this.worker = new Worker({dataflow: this, db});
         this.initStorage();
-        this.connect();
+        this.connection = this.connect();
     }
 
     initStorage() {
         this.db = db;
     }
 
-    connect() {
+    async connect() {
 
         // @TODO: Need to get actual userids and authentication going
-        let userid = 'asdfg1234' //stash.get('userid');
-        if (!userid) {
+        let userId = 'asdfg1234' //stash.get('userid');
+        if (!userId) {
             console.error("User not logged in!")
             return;
         }
 
-        if (this.socket) return this.socket;
-
-        const socket = this.socket = io(config.url + '/user/' + userid);
+        if (this.connection) return this.connection;
 
 
         this.registerListeners();
 
-        this.socket.open()
+        // Here we loop over all our transports, instantiate them, start connection and wait for them to complete
+        this.transports = await Promise.all(
+            [SocketIOTransport].map(t => (new t({dataflow: this})).connect({userId}))
+        )
+
+
     }
+
+    /**
+     * We are overriding the core emit function to ensure that data that is generally emitted to dataflow is also
+     * broadcast to other nodes
+     * @param event
+     * @param args
+     * @returns {*}
+     */
+    emit(event, ...args) {
+        this.transports.forEach(t => t.emit(event, ...args));
+        return this._emit(event, ...args);
+    }
+
+    /**
+     * Private emit to ONLY emit internally, generally used by transport's to avoid recursive loops
+     * @param event
+     * @param args
+     * @returns {boolean}
+     * @private
+     */
+    _emit(event, ...args) {
+        return super.emit(event, ...args);
+    }
+
 
     async updateHistory() {
         console.log(db);
@@ -46,31 +75,25 @@ export class Dataflow extends EventEmitter {
         let lastDate = lastMessage ? lastMessage._cocoa_date : (new Date(2002, 1, 1, 0, 0, 0)).getTime();
 
         let requestData = {lastDate, deviceName: this.getClientInfo().deviceName, requestId: uuidv4()};
-        this.socket.emit('messageHistoryRequest', requestData);
-        this.onMessageHistoryRequest(requestData);
+        this.emit('messageHistoryRequest', requestData);
+        //this.onMessageHistoryRequest(requestData);
     }
 
     registerListeners() {
 
-        let socket = this.connect();
 
-        // Called whenever a new server connection is made
-        socket.on('helloClient', (serverData) => {
-            console.log(serverData);
-            socket.emit('helloServer', this.getClientInfo());
-            this.updateHistory();
-        });
-
+        // Called whenever a new, call an update history check sync upon a new connection is made
+        this.on('transportConnected', this.updateHistory.bind(this));
 
         // Called whenever a new client (or worker) connects to this message namespace
-        socket.on('newClient', ({role, deviceName}) => {
-            console.log(`New ${role}: ${deviceName} is on this message queue`);
+        this.on('newClient', ({role, deviceName, transport}) => {
+            console.log(`New ${role}: ${deviceName} is on this message queue via ${transport}`);
         });
 
-        socket.on('sendMessage', this.onSendMessage.bind(this));
-        socket.on('messageSent', this.onMessageSent.bind(this));
-        socket.on('receivedMessages', this.onReceivedMessages.bind(this));
-        socket.on('messageHistoryRequest', this.onMessageHistoryRequest.bind(this));
+        this.on('sendMessage', this.onSendMessage.bind(this));
+        this.on('messageSent', this.onMessageSent.bind(this));
+        this.on('receivedMessages', this.onReceivedMessages.bind(this));
+        this.on('messageHistoryRequest', this.onMessageHistoryRequest.bind(this));
 
     }
 
@@ -127,7 +150,7 @@ export class Dataflow extends EventEmitter {
     async sendMessage({chat_identifier, text, attachments}) {
         let data = arguments[0];
         data.tracking_id = uuidv4();
-        this.socket.emit('sendMessage', data)
+        this.emit('sendMessage', data)
     }
 
     /**
@@ -146,7 +169,7 @@ export class Dataflow extends EventEmitter {
         } catch (e) {
             console.error(e);
         }
-        this.socket.emit('messageSent', {tracking_id, result});
+        this.emit('messageSent', {tracking_id, result});
         this.onMessageSent({tracking_id, result});
     }
 
@@ -234,7 +257,7 @@ export class Dataflow extends EventEmitter {
                     requestId
                 })
                 console.log("Sending ", data, lastDate);
-                if (this.socket.connected) this.socket.emit('receivedMessages', data);
+                this.emit('receivedMessages', data);
                 this.onReceivedMessages(data);
             } catch (e) {
                 console.error(e)
@@ -246,6 +269,6 @@ export class Dataflow extends EventEmitter {
 }
 
 // @TODO: This could actually be pulled out and extracted into it's own module and them imported into the subseuqent apps (ie Desktop, and Mobile).
-let dataflow = new Dataflow();
+let dataflow = new DataFlow();
 export default dataflow;
 window.dataflow = dataflow;

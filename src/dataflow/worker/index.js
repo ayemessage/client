@@ -1,19 +1,19 @@
 import {schedule} from 'node-cron';
-import {checkFrequency} from '../config';
+import {checkFrequency} from '../../config';
 import MessagesDb from './messagesDb'
 
 /**
  * This is the magic file, that interfaces the Messages application
  *
  * @param isWorker  {boolean}  Whether or not this client is actually a worker
- * @param dataflow  {Dataflow}
+ * @param dataflow  {Index}
  * @param
  */
 export default class Worker {
 
     /**
      *
-     * @param dataflow {Dataflow}
+     * @param dataflow {Index}
      * @param db       {DB}
      * @returns        {boolean}
      */

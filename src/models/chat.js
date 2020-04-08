@@ -11,7 +11,7 @@ export default class Chat extends Model {
     }
 
     getChatName() {
-        return this.room_name || this.display_name || this.chat_identifier;
+        return this.display_name || this.room_name || this.chat_identifier;
     }
 
 }

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@ionic/react": "^5.0.7",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
@@ -10,9 +11,11 @@
     "dexie": "^2.0.4",
     "electron-builder": "^22.4.1",
     "electron-store": "^5.1.1",
+    "ionicons": "^5.0.1",
     "knex": "^0.20.13",
     "lovefield": "^2.1.12",
     "minimongo": "^6.5.0",
+    "moment": "^2.24.0",
     "node-cron": "^2.0.3",
     "node-sass": "^4.13.1",
     "osa-imessage": "^2.4.2",
@@ -21,9 +24,11 @@
     "react-chat-ui": "^0.3.2",
     "react-dom": "^16.13.1",
     "react-scripts": "3.4.1",
+    "shave": "^2.5.9",
     "socket.io": "^2.3.0",
     "sqlite3": "^4.1.1",
-    "stash": "0.0.3"
+    "stash": "0.0.3",
+    "stream-chat-react": "^0.11.7"
   },
   "main": "electron-dev.js",
   "scripts": {

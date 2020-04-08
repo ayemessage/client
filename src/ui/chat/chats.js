@@ -1,8 +1,21 @@
 import React from 'react';
 import chat from '../../models/chat';
-import {Col, Container, ListGroup, Row} from "react-bootstrap";
 import Messages from "./messages";
 import dataflow from "../../dataflow";
+import {
+    IonApp,
+    IonAvatar,
+    IonContent,
+    IonHeader,
+    IonItem,
+    IonLabel,
+    IonList,
+    IonMenu,
+    IonPage,
+    IonSplitPane,
+    IonTitle,
+    IonToolbar
+} from '@ionic/react';
 
 
 export default class Chats extends React.Component {
@@ -39,28 +52,40 @@ export default class Chats extends React.Component {
 
     render() {
         return (
-            <Container fluid className={"chat-ui"}>
-                <Row className="justify-content-md-center">
-                    <Col sm={4} md={3} lg="2" className={"chat-sidebar"}>
-                        <ListGroup variant="flush">
+            <IonApp>
+                <IonSplitPane contentId="main">
+                    {/*--  our side menu  --*/}
+                    <IonMenu contentId="main">
+                        <IonHeader>
+                            <IonToolbar>
+                                <IonTitle>Menu</IonTitle>
+                            </IonToolbar>
+                        </IonHeader>
+                        <IonList>
                             {this.state.chats.map(chat => (
-                                <ListGroup.Item className={"chat-sidebar-item"} key={chat.guid} onClick={() => this.selectChat(chat)}>
-                                    <b>{chat.getChatName()}</b>
-                                    <p className={"chat-last-message"}>{chat.last_message ? chat.last_message.text : ""}</p>
-                                </ListGroup.Item>
+                                <IonItem key={chat.guid} onClick={() => this.selectChat(chat)}>
+                                    <IonAvatar src={""}/>
+                                    <IonLabel>
+                                        <h2>{chat.getChatName()}</h2>
+                                        <p>{chat.last_message ? chat.last_message.text : ""}</p>
+                                    </IonLabel>
+                                </IonItem>
                             ))}
-                        </ListGroup>
-                    </Col>
-                    <Col sm="8" md={"9"} lg={"10"} className={"chat-messages-pane"}>
+
+
+                        </IonList>
+                    </IonMenu>
+                    <IonPage id="main">
                         {this.state.activeChat ? (
                             <Messages chat={this.state.activeChat}/>
                         ) : (
-                            <div>No Active Chat Selected</div>
+                            <IonContent className="ion-padding">
+                                <div>No Active Chat Selected</div>
+                            </IonContent>
                         )}
-                    </Col>
-
-                </Row>
-            </Container>
+                    </IonPage>
+                </IonSplitPane>
+            </IonApp>
         )
     }
 }

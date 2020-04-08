@@ -21,7 +21,7 @@ You can also **subscribe** here to get emailed updates when things are ready: ht
  - [ ] User authentication
  - [ ] Encryption of messages
  - [ ] P2P transmission
- - [ ] Basic Chat UI
+ - [X] Basic Chat UI
  - [ ] Deal with attachments
  - [X] Get Electron app configured and running
  - [ ] Launch publically available comm server for beta
