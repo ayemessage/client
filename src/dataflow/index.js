@@ -230,9 +230,9 @@ export class DataFlow extends EventEmitter {
         }
 
         if(!expectMore){
-            if(chats) this.emit('chatsUpdated');
-            if(messages) this.emit('messagesUpdated');
-            this.emit('receivedUpdate');
+            if (chats) this._emit('chatsUpdated');
+            if (messages) this._emit('messagesUpdated');
+            this._emit('receivedUpdate');
         }
 
         return result;

@@ -1,11 +1,20 @@
 import * as io from 'socket.io-client'
 import {EventEmitter} from "events";
 
+
 export default class SocketIOTransport extends EventEmitter {
 
     constructor({dataflow}) {
         super();
         Object.assign(this, arguments[0])
+
+        let Encryption = window.require("./src/dataflow/encryption")
+        // Configure our encryption for this channel
+        this.encryption = new Encryption(Object.assign(
+            {},
+            this.dataflow.config.encryption.base,
+            this.dataflow.config.encryption.data
+        ))
     }
 
     /**
@@ -37,19 +46,20 @@ export default class SocketIOTransport extends EventEmitter {
      */
     transmit(event, args) {
         // @TODO: Encrypt packet data
-
-        this.socket.emit('d', {event, args})
+        console.log('sending', event, args)
+        let payload = this.encryption.encrypt({event, args});
+        this.socket.emit('d', payload)
     }
 
     /**
      * Receive encrypted packet decode and distrubite
-     * @param event
-     * @param args
+     * @param payload
      */
-    receive({event, args}) {
+    receive(payload) {
         // @TODO: Decrypt packet data
-
-        this.dataflow._emit(event, ...args)
+        let data = this.encryption.decrypt(payload);
+        console.log('recieved', data)
+        this.dataflow._emit(...data)
     }
 
     /**

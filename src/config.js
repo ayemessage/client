@@ -12,9 +12,9 @@ module.exports = {
         mode: 1
     },
     encryption: {
-        data: {
-            wraps: 10,
-            algorithm: 'aes256',
+        base: {
+            wraps: 64,
+            algorithm: 'aes-256-cbc',
             key: 'CHANGEME',
             iv: 'ayeMessageClient',
             encoding: 'utf8',
@@ -22,20 +22,17 @@ module.exports = {
             ivLength: 16,
             hashAlgorithm: 'sha512'
         },
+        data: {
+            wraps: 4,
+        },
         channelTag: {
             socketio: {
                 wraps: 256,
                 algorithm: 'sha512',
-                key: 'CHANGEME',
-                iv: 'ayeMessageClient',
-                encoding: 'utf8'
             },
             localDiscover: {
                 wraps: 128,
                 algorithm: 'sha512',
-                key: 'CHANGEME',
-                iv: 'ayeMessageClient',
-                encoding: 'utf8'
             }
         }
     }

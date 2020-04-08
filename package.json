@@ -10,6 +10,8 @@
     "bootstrap": "^4.4.1",
     "bson": "^4.0.4",
     "chai": "^4.2.0",
+    "create-hash": "^1.2.0",
+    "crypto-browserify": "^3.12.0",
     "dexie": "^2.0.4",
     "electron-builder": "^22.4.1",
     "electron-store": "^5.1.1",
@@ -32,7 +34,7 @@
     "stash": "0.0.3",
     "stream-chat-react": "^0.11.7"
   },
-  "main": "electron-dev.js",
+  "main": "src/electron-dev.js",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -44,6 +46,7 @@
   "eslintConfig": {
     "extends": "react-app"
   },
+  "type": "module",
   "browserslist": {
     "production": [
       ">0.2%",
