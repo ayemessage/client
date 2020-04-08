@@ -1,0 +1,53 @@
+
+.chat-ui-bye {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+
+  .row {
+    height: 100%;
+  }
+
+  .chat-sidebar {
+    overflow-y: scroll;
+    overflow-x: hidden;
+    bottom: 0;
+    height: 100%;
+    padding: 0;
+
+    .chat-sidebar-item {
+      .chat-last-message {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1em;
+        height: 1.5em;
+        margin-bottom: 0;
+
+      }
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.05);
+        cursor: pointer;
+      }
+    }
+  }
+
+  .chat-messages-pane {
+    height: 100%;
+    overflow: hidden;
+
+    #chat-panel {
+      height: 100%;
+    }
+  }
+}
+
+
+.ion-page {
+  display: flex;
+  flex-direction: column;
+}
