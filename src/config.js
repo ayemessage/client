@@ -14,7 +14,29 @@ module.exports = {
     encryption: {
         data: {
             wraps: 10,
-            algorithm: 'aes-256-cbc-hmac-sha1'
+            algorithm: 'aes256',
+            key: 'CHANGEME',
+            iv: 'ayeMessageClient',
+            encoding: 'utf8',
+            keyLength: 32,
+            ivLength: 16,
+            hashAlgorithm: 'sha512'
+        },
+        channelTag: {
+            socketio: {
+                wraps: 256,
+                algorithm: 'sha512',
+                key: 'CHANGEME',
+                iv: 'ayeMessageClient',
+                encoding: 'utf8'
+            },
+            localDiscover: {
+                wraps: 128,
+                algorithm: 'sha512',
+                key: 'CHANGEME',
+                iv: 'ayeMessageClient',
+                encoding: 'utf8'
+            }
         }
     }
 }

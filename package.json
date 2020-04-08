@@ -8,6 +8,8 @@
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
     "bootstrap": "^4.4.1",
+    "bson": "^4.0.4",
+    "chai": "^4.2.0",
     "dexie": "^2.0.4",
     "electron-builder": "^22.4.1",
     "electron-store": "^5.1.1",
